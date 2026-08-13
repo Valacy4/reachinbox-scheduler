@@ -30,3 +30,7 @@ Thumbs.db
 backend/prisma/dev.db
 *.db
 *.sqlite
+
+# Next.js
+.next/
+frontend/.next/

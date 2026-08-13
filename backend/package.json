@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio",
-    "test:ethereal": "ts-node-dev --transpile-only src/scripts/testEthereal.ts"
+    "test:ethereal": "ts-node-dev --transpile-only src/scripts/testEthereal.ts",
+    "test:load": "ts-node-dev --transpile-only src/scripts/loadTest.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
@@ -19,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "google-auth-library": "^11.0.2",
     "ioredis": "^5.4.1",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.14",
