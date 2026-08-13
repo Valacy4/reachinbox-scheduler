@@ -70,7 +70,11 @@ const worker = new Worker<EmailJobPayload>(
 
       await prisma.emailJob.update({
         where: { id: emailJobId },
-        data: { status: "sent", sentAt: new Date() },
+        data: {
+          status: "sent",
+          sentAt: new Date(),
+          previewUrl: result.previewUrl || null,
+        },
       });
 
       console.log(`[worker] sent ${emailJobId} -> ${emailJob.recipient} (${result.previewUrl})`);

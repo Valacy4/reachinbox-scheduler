@@ -11,6 +11,8 @@ export interface ScheduledEmail {
   scheduledAt: string;
   status: EmailStatus;
   sender: string;
+  body?: string;
+  batchId?: string;
 }
 
 export interface SentEmail {
@@ -21,6 +23,9 @@ export interface SentEmail {
   status: EmailStatus;
   lastError: string | null;
   sender: string;
+  body?: string;
+  batchId?: string;
+  previewUrl?: string;
 }
 
 export interface ListResponse<T> {

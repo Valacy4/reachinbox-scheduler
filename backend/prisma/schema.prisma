@@ -48,6 +48,7 @@ model EmailJob {
 
   attempts      Int       @default(0)
   lastError     String?
+  previewUrl    String?
 
   sentAt        DateTime?
   createdAt     DateTime  @default(now())
