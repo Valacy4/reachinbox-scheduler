@@ -15,7 +15,7 @@ async function main() {
       name: "Default Test Sender",
       email: env.ethereal.user,
       smtpHost: env.ethereal.host,
-      smtpPort: env.ethereal.port,
+      smtpPort: 465,
       smtpUser: env.ethereal.user,
       smtpPass: env.ethereal.pass,
     },

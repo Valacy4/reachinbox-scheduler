@@ -18,7 +18,7 @@ async function main() {
       name,
       email,
       smtpHost: "smtp.ethereal.email",
-      smtpPort: 587,
+      smtpPort: 465,
       smtpUser: email,
       smtpPass: pass,
     },

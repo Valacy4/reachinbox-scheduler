@@ -15,10 +15,13 @@ export function getTransporter(creds: SmtpCreds): Transporter {
   const cached = transporterCache.get(key);
   if (cached) return cached;
 
+  const port = creds.port === 587 ? 465 : creds.port;
+  const secure = port === 465;
+
   const transporter = nodemailer.createTransport({
     host: creds.host,
-    port: creds.port,
-    secure: creds.port === 465, // true for 465, false for 587
+    port,
+    secure,
     auth: {
       user: creds.user,
       pass: creds.pass,
