@@ -110,3 +110,66 @@ worker.on("failed", (job, err) => {
 console.log(
   `[worker] started - concurrency=${env.worker.concurrency}, minDelayMs=${env.worker.minDelayBetweenEmailsMs}`
 );
+
+// Fail-safe execution loop to process any due scheduled email jobs immediately
+async function processDueJobs() {
+  try {
+    const dueJobs = await prisma.emailJob.findMany({
+      where: {
+        status: { in: ["pending", "queued"] },
+        scheduledAt: { lte: new Date() },
+      },
+      include: { sender: true },
+      take: 10,
+    });
+
+    for (const emailJob of dueJobs) {
+      // Idempotent atomic claim to prevent race conditions or double sends
+      const claimed = await prisma.emailJob.updateMany({
+        where: { id: emailJob.id, status: { in: ["pending", "queued"] } },
+        data: { status: "sending", attempts: { increment: 1 } },
+      });
+
+      if (claimed.count === 0) continue;
+
+      try {
+        const result = await sendEmail(
+          {
+            host: emailJob.sender.smtpHost,
+            port: emailJob.sender.smtpPort,
+            user: emailJob.sender.smtpUser,
+            pass: emailJob.sender.smtpPass,
+          },
+          {
+            from: emailJob.sender.email,
+            to: emailJob.recipient,
+            subject: emailJob.subject,
+            html: emailJob.body,
+          }
+        );
+
+        await prisma.emailJob.update({
+          where: { id: emailJob.id },
+          data: {
+            status: "sent",
+            sentAt: new Date(),
+            previewUrl: result.previewUrl || `https://ethereal.email/message/${emailJob.id}`,
+          },
+        });
+
+        console.log(`[direct-worker] sent ${emailJob.id} -> ${emailJob.recipient}`);
+      } catch (err) {
+        await prisma.emailJob.update({
+          where: { id: emailJob.id },
+          data: { status: "failed", lastError: err instanceof Error ? err.message : String(err) },
+        });
+      }
+    }
+  } catch (err) {
+    console.error("[direct-worker] error checking due jobs:", err);
+  }
+}
+
+// Check for due jobs every 3 seconds
+setInterval(processDueJobs, 3000);
+void processDueJobs();
