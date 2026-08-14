@@ -564,7 +564,6 @@ function MessageRow({
   email: ScheduledEmail | SentEmail;
   onClick: () => void;
 }) {
-  const [starred, setStarred] = useState(false);
   const isScheduled = type === "scheduled";
 
   const displayTime = isScheduled

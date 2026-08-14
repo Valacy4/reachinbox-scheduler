@@ -16,17 +16,15 @@ async function main() {
 
   console.log(`Found ${loadTestJobs.length} load-test email jobs across ${batchIds.length} batch(es).`);
 
-  if (loadTestJobs.length === 0) {
-    console.log("Nothing to clean up.");
-    await prisma.$disconnect();
-    return;
+  if (loadTestJobs.length > 0) {
+    // 2. Delete them from the database
+    const deleted = await prisma.emailJob.deleteMany({
+      where: { id: { in: jobIds } },
+    });
+    console.log(`Deleted ${deleted.count} rows from EmailJob table.`);
+  } else {
+    console.log("No load-test rows found in database.");
   }
-
-  // 2. Delete them from the database
-  const deleted = await prisma.emailJob.deleteMany({
-    where: { id: { in: jobIds } },
-  });
-  console.log(`Deleted ${deleted.count} rows from EmailJob table.`);
 
   // 3. Drain matching jobs from the BullMQ queue
   const connection = new IORedis({
@@ -36,6 +34,7 @@ async function main() {
   });
 
   // 3. Obliterate queue and reconcile real pending jobs from DB
+  const queue = new Queue("email-queue", { connection });
   await queue.obliterate({ force: true });
   console.log("Obliterated BullMQ Redis queue.");
 

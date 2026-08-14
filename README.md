@@ -270,16 +270,40 @@ http://localhost:3000/api/auth/callback/google
 
 ## API Endpoints
 
-### Health
+> **Authentication Note**: All `/api/*` routes are protected and require an `Authorization: Bearer <Google_ID_Token>` header (verified via Google's OAuth2 public keys). For CLI testing scripts, `Bearer internal-load-test-token` is accepted.
+
+### Health (Public)
 
 ```http
 GET /health
 ```
 
-### Schedule Emails
+### List Senders (Protected)
+
+```http
+GET /api/senders
+Authorization: Bearer <token>
+```
+
+Returns all available SMTP senders in the database:
+```json
+{
+  "senders": [
+    {
+      "id": "634bcf05-921c-4260-a6d5-9861aac191dd",
+      "name": "Default Test Sender",
+      "email": "h5t6pamf3ojod3fq@ethereal.email",
+      "createdAt": "2026-08-13T04:52:27.033Z"
+    }
+  ]
+}
+```
+
+### Schedule Emails (Protected)
 
 ```http
 POST /api/schedule
+Authorization: Bearer <token>
 ```
 
 Request body:
@@ -296,10 +320,11 @@ Request body:
 }
 ```
 
-### List Scheduled Emails
+### List Scheduled Emails (Protected)
 
 ```http
 GET /api/emails/scheduled
+Authorization: Bearer <token>
 ```
 
 Returns jobs with statuses:
@@ -309,21 +334,23 @@ Returns jobs with statuses:
 - `delayed`
 - `sending`
 
-### List Sent Emails
+### List Sent Emails (Protected)
 
 ```http
 GET /api/emails/sent
+Authorization: Bearer <token>
 ```
 
 Returns jobs with statuses:
 
-- `sent`
-- `failed`
+- `sent` (includes `previewUrl` for Ethereal web viewing)
+- `failed` (includes `lastError` error log)
 
-### Parse Recipient Upload
+### Parse Recipient Upload (Protected)
 
 ```http
 POST /api/uploads/parse-recipients
+Authorization: Bearer <token>
 ```
 
 Form field:
@@ -505,7 +532,7 @@ The frontend includes:
 - Live 4-second auto-polling for instantaneous job status transitions
 - Email Detail Modal View with full HTML body preview and Ethereal inspect links
 - Instagram/LinkedIn style animated skeleton loading UI
-- Empty states, loading states, and toast notifications
+- Empty states, loading states, and inline notice banners
 
 ## Feature Checklist
 
@@ -530,6 +557,7 @@ The frontend includes:
 - [x] CSV/text recipient parsing API (`POST /api/uploads/parse-recipients`)
 - [x] Google ID token verification middleware (`requireGoogleAuth`) protecting all endpoints
 - [x] CLI load test script (`npm run test:load`) with rate limit verification
+- [x] Load test cleanup utility (`src/scripts/cleanLoadTest.ts`)
 
 ### Frontend
 
@@ -552,8 +580,8 @@ The frontend includes:
 
 ## Assumptions and Trade-offs
 
-- **Authentication**: Authentication is handled via Google OAuth 2.0 (NextAuth.js). The backend strictly validates Google JWT ID tokens on all API routes using `google-auth-library`. The Email/Password input fields on the login page are present for Figma visual fidelity.
-- **Multi-Sender Architecture**: The database and backend support multiple SMTP senders. The Compose screen dynamically fetches all available senders from `GET /api/senders` and lets users select their sending identity.
+- **Authentication**: Authentication is handled via Google OAuth 2.0 (NextAuth.js). The backend strictly validates Google JWT ID tokens on all API routes using `google-auth-library`. The Email/Password input fields on the login page are present for Figma visual fidelity. For CLI test scripts, `Bearer internal-load-test-token` is supported as an internal bypass.
+- **Multi-Sender Architecture**: The database and backend support multiple SMTP senders. The Compose screen dynamically fetches all available senders from `GET /api/senders` and lets users select their sending identity. The `NEXT_PUBLIC_DEFAULT_SENDER_ID` environment variable serves only as an optional fallback.
 - **Rate Limiting & Delay**:
   - `delayBetweenMs` controls spacing between recipients in a scheduled batch.
   - `MIN_DELAY_BETWEEN_EMAILS_MS` provides a worker-level throttle between sends.
@@ -572,9 +600,19 @@ npm run prisma:generate
 npm run prisma:migrate
 npm run test:ethereal
 npx ts-node-dev --transpile-only src/scripts/seedSender.ts
+
+# Optional: Seed a second sender for multi-sender testing
+$env:SEED_SENDER_EMAIL="second-user@ethereal.email"
+$env:SEED_SENDER_PASS="second-pass"
+npx ts-node-dev --transpile-only src/scripts/seedSecondSender.ts
+
+# Run servers
 npm run dev
 npm run worker
+
+# Run load test & clean up
 npm run test:load
+npx ts-node-dev --transpile-only src/scripts/cleanLoadTest.ts
 ```
 
 ### Frontend
@@ -608,3 +646,4 @@ Before submitting:
 - Verify scheduling batch emails with custom delays and hourly limits.
 - Inspect scheduled emails, live auto-polling status updates, and sent email Ethereal previews.
 - Run `npm run test:load` to demonstrate rate limiting and concurrency at scale.
+

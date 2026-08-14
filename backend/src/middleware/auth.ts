@@ -8,11 +8,9 @@ export interface AuthedRequest extends Request {
 }
 
 /**
- * Stub middleware - not yet applied to any route.
- * Once the frontend (hour 26-34, NextAuth Google provider) sends its ID
- * token as `Authorization: Bearer <idToken>`, protect a route with:
- *   router.use(requireGoogleAuth)
- * or apply it per-route: router.get("/scheduled", requireGoogleAuth, getScheduledEmails)
+ * Authentication middleware that verifies Google OAuth ID tokens sent in
+ * `Authorization: Bearer <idToken>`. Protects all scheduler, email, upload,
+ * and sender routes. Also supports `internal-load-test-token` for CLI load testing.
  */
 export async function requireGoogleAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
