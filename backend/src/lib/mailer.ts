@@ -18,10 +18,16 @@ export function getTransporter(creds: SmtpCreds): Transporter {
   const transporter = nodemailer.createTransport({
     host: creds.host,
     port: creds.port,
-    secure: false, // Ethereal uses STARTTLS on 587
+    secure: creds.port === 465, // true for 465, false for 587
     auth: {
       user: creds.user,
       pass: creds.pass,
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 
