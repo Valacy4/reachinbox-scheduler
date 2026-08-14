@@ -5,6 +5,7 @@ import { prisma } from "./lib/prisma";
 import { scheduleRouter } from "./routes/scheduleRoutes";
 import { emailsRouter } from "./routes/emailsRoutes";
 import { uploadRouter } from "./routes/uploadRoutes";
+import { sendersRouter } from "./routes/sendersRoutes";
 import { requireGoogleAuth } from "./middleware/auth";
 import { reconcilePendingJobs } from "./jobs/reconcile";
 
@@ -25,6 +26,7 @@ app.get("/health", async (_req, res) => {
 app.use("/api/schedule", requireGoogleAuth, scheduleRouter);
 app.use("/api/emails", requireGoogleAuth, emailsRouter);
 app.use("/api/uploads", requireGoogleAuth, uploadRouter);
+app.use("/api/senders", requireGoogleAuth, sendersRouter);
 
 app.listen(env.port, async () => {
   console.log(`API listening on http://localhost:${env.port}`);

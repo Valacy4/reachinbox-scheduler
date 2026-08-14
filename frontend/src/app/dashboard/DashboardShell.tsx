@@ -29,10 +29,12 @@ import { signOut, useSession } from "next-auth/react";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
   listScheduledEmails,
+  listSenders,
   listSentEmails,
   parseRecipientsFile,
   scheduleEmails,
   type ScheduledEmail,
+  type SenderInfo,
   type SentEmail
 } from "@/lib/api";
 import { formatDateTime, toDateTimeLocalValue } from "@/lib/format";
@@ -83,6 +85,7 @@ export function DashboardShell() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<ScheduledEmail | SentEmail | null>(null);
+  const [senders, setSenders] = useState<SenderInfo[]>([]);
 
   async function refreshData(silent = false) {
     if (silent) {
@@ -112,6 +115,10 @@ export function DashboardShell() {
   useEffect(() => {
     void refreshData();
 
+    listSenders()
+      .then((res) => setSenders(res.senders))
+      .catch(() => {});
+
     // Auto-poll every 4 seconds so background worker job status transitions update live on the dashboard
     const interval = setInterval(() => {
       void refreshData(true);
@@ -132,6 +139,7 @@ export function DashboardShell() {
   if (view === "compose") {
     return (
       <ComposeScreen
+        senders={senders}
         senderLabel={session?.user?.email ?? "oliver.brown@domain.io"}
         onBack={() => setView("list")}
         onScheduled={(count, batchId) => {
@@ -603,20 +611,31 @@ function ListState({ icon, text }: { icon: ReactNode; text: string }) {
 }
 
 function ComposeScreen({
+  senders,
   senderLabel,
   onBack,
   onScheduled
 }: {
+  senders: SenderInfo[];
   senderLabel: string;
   onBack: () => void;
   onScheduled: (count: number, batchId: string) => void;
 }) {
   const [form, setForm] = useState<ComposeState>(initialComposeState);
+  const [selectedSenderId, setSelectedSenderId] = useState(
+    senders[0]?.id || process.env.NEXT_PUBLIC_DEFAULT_SENDER_ID || ""
+  );
   const [recipientInput, setRecipientInput] = useState("");
   const [parsing, setParsing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!selectedSenderId && senders.length > 0) {
+      setSelectedSenderId(senders[0].id);
+    }
+  }, [senders, selectedSenderId]);
 
   function addRecipientFromInput() {
     const extracted = extractEmails(recipientInput);
@@ -669,9 +688,12 @@ function ComposeScreen({
   async function submit() {
     setError("");
 
-    const senderId = process.env.NEXT_PUBLIC_DEFAULT_SENDER_ID;
+    const senderId =
+      selectedSenderId ||
+      senders[0]?.id ||
+      process.env.NEXT_PUBLIC_DEFAULT_SENDER_ID;
     if (!senderId) {
-      setError("NEXT_PUBLIC_DEFAULT_SENDER_ID is missing in frontend .env.local.");
+      setError("No sender account configured. Please seed a sender first.");
       return;
     }
 
@@ -858,13 +880,29 @@ function ComposeScreen({
 
         <div className="space-y-6">
           <ComposeRow label="From">
-            <button
-              type="button"
-              className="inline-flex h-10 max-w-full items-center gap-2 rounded-lg bg-gray-100 px-3 text-sm text-gray-900"
-            >
-              <span className="truncate">{senderLabel}</span>
-              <ChevronDown size={16} className="shrink-0 text-gray-400" />
-            </button>
+            {senders.length > 0 ? (
+              <div className="relative inline-block max-w-full">
+                <select
+                  value={selectedSenderId}
+                  onChange={(e) => setSelectedSenderId(e.target.value)}
+                  className="h-10 max-w-full appearance-none rounded-lg bg-gray-100 pl-3 pr-8 text-sm font-medium text-gray-900 outline-none hover:bg-gray-200/70 focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  {senders.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name ? `${s.name} <${s.email}>` : s.email}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-2.5 top-3 text-gray-500"
+                />
+              </div>
+            ) : (
+              <div className="inline-flex h-10 max-w-full items-center gap-2 rounded-lg bg-gray-100 px-3 text-sm text-gray-900 font-medium">
+                <span className="truncate">{senderLabel}</span>
+              </div>
+            )}
           </ComposeRow>
 
           <ComposeRow label="To">

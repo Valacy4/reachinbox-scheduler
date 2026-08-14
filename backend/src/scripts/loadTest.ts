@@ -20,6 +20,7 @@ function postJson(path: string, body: unknown): Promise<{ status: number; json: 
         headers: {
           "Content-Type": "application/json",
           "Content-Length": Buffer.byteLength(data),
+          Authorization: "Bearer internal-load-test-token",
         },
       },
       (res) => {

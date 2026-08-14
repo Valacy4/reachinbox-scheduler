@@ -493,80 +493,73 @@ Recommended test:
 The frontend includes:
 
 - Google login with NextAuth
-- protected dashboard route
-- top header with user name, email, avatar, and logout
-- Scheduled Emails tab
-- Sent Emails tab
-- Compose New Email modal
-- CSV/text upload for leads
-- parsed email count display
-- start time input
-- delay-between-emails input
-- hourly limit input
-- loading states
-- empty states
-- API error messages
-- schedule success message
+- Protected dashboard route via NextAuth session middleware
+- Responsive Left Sidebar & Header navigation
+- Scheduled Emails list with real-time status indicators
+- Sent Emails list with direct Ethereal web preview links
+- Full-page Compose screen matching Figma design
+- Interactive Rich-Text formatting toolbar (Bold, Italic, Underline, Strikethrough, Headings, Ordered/Unordered Lists, Blockquotes, Align, Undo/Redo)
+- Lead list file attachment (.csv, .txt) with parsed recipient tags and badge counter
+- Multi-sender support with dynamic "From" SMTP sender dropdown (`GET /api/senders`)
+- Multi-field Search & Status Filter popover
+- Live 4-second auto-polling for instantaneous job status transitions
+- Email Detail Modal View with full HTML body preview and Ethereal inspect links
+- Instagram/LinkedIn style animated skeleton loading UI
+- Empty states, loading states, and toast notifications
 
 ## Feature Checklist
 
 ### Backend
 
 - [x] Express + TypeScript backend
-- [x] PostgreSQL database
-- [x] Prisma schema and migration
-- [x] Sender model with SMTP credentials
-- [x] EmailJob model with persistent status
-- [x] BullMQ delayed jobs
-- [x] Redis-backed queue persistence
-- [x] No cron jobs
-- [x] Ethereal SMTP sending
+- [x] PostgreSQL database with Prisma ORM
+- [x] Prisma migrations including `previewUrl` schema migration
+- [x] Sender model with SMTP credentials & `GET /api/senders` endpoint
+- [x] EmailJob model with persistent status, timestamps, and error logging
+- [x] BullMQ delayed jobs with Redis persistence
+- [x] No cron jobs (event-driven queue execution)
+- [x] Ethereal SMTP delivery with test message preview URLs
 - [x] Deterministic BullMQ job IDs
-- [x] DB status check before sending
-- [x] Worker concurrency from env
-- [x] Minimum delay between email sends
-- [x] Redis-backed hourly rate limiting
-- [x] Requeue into next hour when limit is reached
-- [x] Scheduled emails API
-- [x] Sent emails API
-- [x] CSV/text recipient parsing API
-- [x] Google ID token verification middleware stub
-- [x] Load test script
+- [x] DB status check and idempotency before sending
+- [x] Worker concurrency configured via environment variables
+- [x] Minimum delay throttle between email sends
+- [x] Redis-backed atomic hourly rate limiting
+- [x] Requeue into next hourly window when rate limit is exceeded
+- [x] Scheduled emails API (`GET /api/emails/scheduled`)
+- [x] Sent emails API (`GET /api/emails/sent`)
+- [x] CSV/text recipient parsing API (`POST /api/uploads/parse-recipients`)
+- [x] Google ID token verification middleware (`requireGoogleAuth`) protecting all endpoints
+- [x] CLI load test script (`npm run test:load`) with rate limit verification
 
 ### Frontend
 
-- [x] Next.js + TypeScript frontend
-- [x] Tailwind CSS styling
-- [x] Google OAuth via NextAuth
-- [x] Protected dashboard route
-- [x] Header with user profile
-- [x] Logout
-- [x] Scheduled Emails table
-- [x] Sent Emails table
-- [x] Compose New Email modal
-- [x] CSV/text upload
-- [x] Parsed recipient count
-- [x] Start time input
-- [x] Delay between emails input
-- [x] Hourly limit input
-- [x] Loading states
-- [x] Empty states
-- [x] Basic error handling
+- [x] Next.js 14 App Router + TypeScript frontend
+- [x] Tailwind CSS styling matching Figma design
+- [x] Google OAuth via NextAuth.js
+- [x] Protected dashboard routes with NextAuth middleware
+- [x] User profile display with animated skeleton shimmer loading
+- [x] Full-page Compose screen with back navigation
+- [x] Dynamic From sender dropdown populated via `GET /api/senders`
+- [x] Lead list upload (.csv, .txt) with recipient tag pills and paperclip badge
+- [x] Start time picker with quick presets (Tomorrow 11 AM, Tomorrow 3 PM)
+- [x] Configurable delay-between-emails and hourly limits
+- [x] Interactive Rich Text Editor (`contentEditable`) with toolbar active state highlighting
+- [x] Scheduled & Sent tabs with real-time 4-second auto-polling
+- [x] Live search across recipients, subjects, and email bodies
+- [x] Filter popover by job status (Queued, Delayed, Sending, Sent, Failed)
+- [x] Email Detail Modal with full HTML preview and Ethereal viewer links
+- [x] Logout functionality
 
 ## Assumptions and Trade-offs
 
-- The app uses one default sender in the frontend through `NEXT_PUBLIC_DEFAULT_SENDER_ID`.
-- The backend supports multiple senders in the database and worker logic, but the current UI schedules from one configured sender.
-- There are two delay concepts:
+- **Authentication**: Authentication is handled via Google OAuth 2.0 (NextAuth.js). The backend strictly validates Google JWT ID tokens on all API routes using `google-auth-library`. The Email/Password input fields on the login page are present for Figma visual fidelity.
+- **Multi-Sender Architecture**: The database and backend support multiple SMTP senders. The Compose screen dynamically fetches all available senders from `GET /api/senders` and lets users select their sending identity.
+- **Rate Limiting & Delay**:
   - `delayBetweenMs` controls spacing between recipients in a scheduled batch.
-  - `MIN_DELAY_BETWEEN_EMAILS_MS` is a worker-level global throttle that prevents emails from being sent too quickly.
-- Rate limiting is implemented per sender using fixed hourly Redis windows.
-- When the hourly limit is reached, jobs are delayed into the next hour window instead of being failed or dropped.
-- Ethereal is used only for fake SMTP testing; no real emails are sent.
-- The frontend is wired to local backend URLs by default.
-- Google auth is implemented on the frontend through NextAuth. Backend Google token verification middleware exists, but routes are not strictly protected yet.
-- The UI is functional and clean, but exact Figma matching depends on having the final Figma reference available.
-- The load test demonstrates queue/rate-limit behavior without relying on real production email throughput.
+  - `MIN_DELAY_BETWEEN_EMAILS_MS` provides a worker-level throttle between sends.
+  - Hourly rate limits use Redis atomic counters keyed by sender and hour window. When a limit is hit, jobs are delayed into the next hour window rather than dropped.
+- **Email Delivery**: Test emails are delivered through Ethereal SMTP and test inspection links (`previewUrl`) are stored and accessible directly from the dashboard.
+- **Persistence & Recovery**: All scheduled and sent states are persisted in PostgreSQL. In the event of a worker or server restart, pending/delayed jobs are safely reconciled.
 
 ## Useful Commands
 
@@ -592,7 +585,7 @@ npm install
 npm run dev
 ```
 
-### Type Checks
+### Type Checks & Builds
 
 ```powershell
 cd backend
@@ -608,15 +601,10 @@ npm run build
 
 Before submitting:
 
-- Confirm Docker services are healthy.
-- Confirm backend API starts.
-- Confirm worker starts.
-- Confirm Google login works.
-- Confirm schedule flow works from the frontend.
-- Confirm scheduled emails appear in the Scheduled tab.
-- Confirm sent emails appear in the Sent tab.
-- Record restart persistence demo.
-- Record rate-limit demo with a low hourly limit.
-- Push to a private GitHub repository.
-- Grant access to the required reviewers.
-- Submit the form with GitHub and demo video links.
+- Confirm Docker services (PostgreSQL & Redis) are healthy.
+- Confirm backend API (`http://localhost:4000`) and worker are running.
+- Confirm frontend (`http://localhost:3000`) is running.
+- Verify Google login and protected route navigation.
+- Verify scheduling batch emails with custom delays and hourly limits.
+- Inspect scheduled emails, live auto-polling status updates, and sent email Ethereal previews.
+- Run `npm run test:load` to demonstrate rate limiting and concurrency at scale.

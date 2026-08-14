@@ -110,3 +110,13 @@ export function scheduleEmails(payload: SchedulePayload) {
     body: JSON.stringify(payload)
   });
 }
+
+export interface SenderInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export function listSenders() {
+  return request<{ senders: SenderInfo[] }>("/api/senders");
+}
