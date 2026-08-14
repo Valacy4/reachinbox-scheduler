@@ -97,8 +97,8 @@ export function DashboardShell() {
 
     try {
       const [scheduledResponse, sentResponse] = await Promise.all([
-        listScheduledEmails(),
-        listSentEmails()
+        listScheduledEmails({ status: statusFilter, search: searchQuery }),
+        listSentEmails({ status: statusFilter, search: searchQuery })
       ]);
       setScheduled(scheduledResponse.jobs);
       setScheduledTotal(scheduledResponse.total);
@@ -125,16 +125,10 @@ export function DashboardShell() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [statusFilter, searchQuery]);
 
-  const filteredScheduled = useMemo(
-    () => filterMessages(scheduled, searchQuery, statusFilter),
-    [scheduled, searchQuery, statusFilter]
-  );
-  const filteredSent = useMemo(
-    () => filterMessages(sent, searchQuery, statusFilter),
-    [sent, searchQuery, statusFilter]
-  );
+  const filteredScheduled = scheduled;
+  const filteredSent = sent;
 
   if (view === "compose") {
     return (

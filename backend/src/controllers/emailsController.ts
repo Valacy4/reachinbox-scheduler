@@ -12,16 +12,31 @@ function parsePagination(req: Request) {
 
 export async function getScheduledEmails(req: Request, res: Response) {
   const { limit, offset } = parsePagination(req);
+  const statusParam = req.query.status as string | undefined;
+  const searchParam = req.query.search as string | undefined;
+
+  const whereClause: any = {
+    status: statusParam && statusParam !== "all"
+      ? statusParam
+      : { in: [...SCHEDULED_STATUSES] },
+  };
+
+  if (searchParam) {
+    whereClause.OR = [
+      { recipient: { contains: searchParam, mode: "insensitive" } },
+      { subject: { contains: searchParam, mode: "insensitive" } },
+    ];
+  }
 
   const [jobs, total] = await Promise.all([
     prisma.emailJob.findMany({
-      where: { status: { in: [...SCHEDULED_STATUSES] } },
-      orderBy: { scheduledAt: "asc" },
+      where: whereClause,
+      orderBy: { updatedAt: "desc" },
       take: limit,
       skip: offset,
       include: { sender: { select: { email: true } } },
     }),
-    prisma.emailJob.count({ where: { status: { in: [...SCHEDULED_STATUSES] } } }),
+    prisma.emailJob.count({ where: whereClause }),
   ]);
 
   res.json({
@@ -43,16 +58,31 @@ export async function getScheduledEmails(req: Request, res: Response) {
 
 export async function getSentEmails(req: Request, res: Response) {
   const { limit, offset } = parsePagination(req);
+  const statusParam = req.query.status as string | undefined;
+  const searchParam = req.query.search as string | undefined;
+
+  const whereClause: any = {
+    status: statusParam && statusParam !== "all"
+      ? statusParam
+      : { in: [...TERMINAL_STATUSES] },
+  };
+
+  if (searchParam) {
+    whereClause.OR = [
+      { recipient: { contains: searchParam, mode: "insensitive" } },
+      { subject: { contains: searchParam, mode: "insensitive" } },
+    ];
+  }
 
   const [jobs, total] = await Promise.all([
     prisma.emailJob.findMany({
-      where: { status: { in: [...TERMINAL_STATUSES] } },
+      where: whereClause,
       orderBy: { updatedAt: "desc" },
       take: limit,
       skip: offset,
       include: { sender: { select: { email: true } } },
     }),
-    prisma.emailJob.count({ where: { status: { in: [...TERMINAL_STATUSES] } } }),
+    prisma.emailJob.count({ where: whereClause }),
   ]);
 
   res.json({

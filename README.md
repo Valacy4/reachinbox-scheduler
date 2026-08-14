@@ -612,7 +612,7 @@ npm run worker
 
 # Run load test & clean up
 npm run test:load
-npx ts-node-dev --transpile-only src/scripts/cleanLoadTest.ts
+npm run test:clean
 ```
 
 ### Frontend

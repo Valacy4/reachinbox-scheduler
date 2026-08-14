@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio",
     "test:ethereal": "ts-node-dev --transpile-only src/scripts/testEthereal.ts",
-    "test:load": "ts-node-dev --transpile-only src/scripts/loadTest.ts"
+    "test:load": "ts-node-dev --transpile-only src/scripts/loadTest.ts",
+    "test:clean": "ts-node-dev --transpile-only src/scripts/cleanLoadTest.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",

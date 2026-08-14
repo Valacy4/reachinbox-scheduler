@@ -4,9 +4,9 @@ import { env } from "../config/env";
 
 const API_PORT = env.port;
 const RECIPIENT_COUNT = 1000;
-const TEST_HOURLY_LIMIT = 50; // deliberately low so the limiter triggers almost immediately
+const TEST_HOURLY_LIMIT = 10; // set to 10 so the limit is hit within 20s (given ~2s per email send)
 const POLL_INTERVAL_MS = 5000;
-const POLL_ITERATIONS = 8; // ~40s of observation - enough to see the rate-limit path fire
+const POLL_ITERATIONS = 8; // 40s is plenty of time to see limit hit at job 11
 
 function postJson(path: string, body: unknown): Promise<{ status: number; json: any }> {
   return new Promise((resolve, reject) => {

@@ -87,12 +87,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T;
 }
 
-export function listScheduledEmails() {
-  return request<ListResponse<ScheduledEmail>>("/api/emails/scheduled");
+export function listScheduledEmails(params?: { status?: string; search?: string; limit?: number; offset?: number }) {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.offset) query.set("offset", String(params.offset));
+  const qs = query.toString();
+  return request<ListResponse<ScheduledEmail>>(`/api/emails/scheduled${qs ? `?${qs}` : ""}`);
 }
 
-export function listSentEmails() {
-  return request<ListResponse<SentEmail>>("/api/emails/sent");
+export function listSentEmails(params?: { status?: string; search?: string; limit?: number; offset?: number }) {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.offset) query.set("offset", String(params.offset));
+  const qs = query.toString();
+  return request<ListResponse<SentEmail>>(`/api/emails/sent${qs ? `?${qs}` : ""}`);
 }
 
 export function parseRecipientsFile(file: File) {

@@ -1,6 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
+import { connection } from "../lib/redis";
+import { EMAIL_QUEUE_NAME } from "../lib/queue";
 
 async function main() {
   // 1. Find all load-test email jobs (recipients matching load-test-user-*@example.test)
@@ -26,15 +27,8 @@ async function main() {
     console.log("No load-test rows found in database.");
   }
 
-  // 3. Drain matching jobs from the BullMQ queue
-  const connection = new IORedis({
-    host: process.env.REDIS_HOST || "localhost",
-    port: Number(process.env.REDIS_PORT) || 6379,
-    maxRetriesPerRequest: null,
-  });
-
   // 3. Obliterate queue and reconcile real pending jobs from DB
-  const queue = new Queue("email-queue", { connection });
+  const queue = new Queue(EMAIL_QUEUE_NAME, { connection });
   await queue.obliterate({ force: true });
   console.log("Obliterated BullMQ Redis queue.");
 
