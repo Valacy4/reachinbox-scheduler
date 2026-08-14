@@ -12,7 +12,17 @@ import "./jobs/worker";
 
 const app = express();
 
-app.use(cors({ origin: env.frontendUrl, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || origin.includes("localhost") || origin.includes("vercel.app") || origin === env.frontendUrl) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get("/health", async (_req, res) => {
