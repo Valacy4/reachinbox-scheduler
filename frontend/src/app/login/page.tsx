@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import type { FormEvent } from "react";
 
+// Figma-aligned Login Page
 export default function LoginPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
