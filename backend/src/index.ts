@@ -8,6 +8,7 @@ import { uploadRouter } from "./routes/uploadRoutes";
 import { sendersRouter } from "./routes/sendersRoutes";
 import { requireGoogleAuth } from "./middleware/auth";
 import { reconcilePendingJobs } from "./jobs/reconcile";
+import "./jobs/worker";
 
 const app = express();
 
