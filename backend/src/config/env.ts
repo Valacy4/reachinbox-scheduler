@@ -15,7 +15,8 @@ export const env = {
 
   databaseUrl: required("DATABASE_URL"),
 
-  redisHost: required("REDIS_HOST", "localhost"),
+  redisUrl: process.env.REDIS_URL,
+  redisHost: process.env.REDIS_HOST ?? "localhost",
   redisPort: parseInt(process.env.REDIS_PORT ?? "6379", 10),
 
   ethereal: {
