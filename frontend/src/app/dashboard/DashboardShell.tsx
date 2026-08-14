@@ -1227,7 +1227,7 @@ function EmailDetailModal({
         </div>
 
         <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-4">
-          {previewUrl ? (
+          {previewUrl && previewUrl.startsWith("https://ethereal.email/message/") && previewUrl.length > 35 ? (
             <a
               href={previewUrl}
               target="_blank"
