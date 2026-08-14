@@ -27,6 +27,15 @@ A full-stack email scheduling service built for the ReachInbox.ai assignment. Th
 - Google OAuth
 - lucide-react icons
 
+## Live Production Deployment
+
+- **Live Application (Frontend)**: [https://reachinbox-scheduler-gamma.vercel.app](https://reachinbox-scheduler-gamma.vercel.app)
+- **Live Backend API**: [https://reachinbox-scheduler-x15j.onrender.com](https://reachinbox-scheduler-x15j.onrender.com)
+- **Database**: Supabase PostgreSQL Cloud Instance
+- **GitHub Repository**: [https://github.com/Valacy4/reachinbox-scheduler](https://github.com/Valacy4/reachinbox-scheduler)
+
+> **Cloud Environment & Network Security Note**: On cloud hosting providers (such as Render free tier), raw outbound TCP socket connections on SMTP ports (587/465) are restricted by the hosting network firewall for security compliance. All backend job queueing, Redis-backed BullMQ delayed execution, PostgreSQL persistence, NextAuth authentication, live 4-second auto-polling, and database state transitions run live in production. For full end-to-end SMTP mail transmission with live Ethereal test inbox inspection (`previewUrl`), use the local development setup (`http://localhost:3000`).
+
 ## Project Structure
 
 ```text
